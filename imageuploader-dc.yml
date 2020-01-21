@@ -1,0 +1,51 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: "{{ app_name }}"
+  name: "{{ app_name }}"
+spec:
+  replicas: 1
+  selector:
+    app: "{{ app_name }}"
+    deploymentconfig: "{{ app_name }}"
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: "{{ app_name }}"
+        deploymentconfig: "{{ app_name }}"
+    spec:
+      containers:
+      - image: ' '
+        imagePullPolicy: Always
+        name: "{{ app_name }}"
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        resources: 
+          limits:
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - "{{ app_name }}"
+      from:
+        kind: ImageStreamTag
+        name: "{{ app_name }}:latest"
+        namespace: "{{ namespace }}"
+    type: ImageChange
+...

@@ -1,0 +1,5 @@
+.*.swp
+ansible.log
+ansible.cfg
+inventario
+ssh.cfg

@@ -1,0 +1,232 @@
+---
+- name: Deploy Cakephp with no persistent storage
+  hosts: masters
+  vars:
+    database_password_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+    cakephp_secret_token_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+    cakephp_security_salt_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+    database_name: default
+    database_user: cakephp
+    namespace: cakephp
+    app_name: cakephp-mysql-example
+    secret_name: cakesecret
+    database_service_name: mysql
+    source_repository_url: https://github.com/sclorg/cakephp-ex.git
+    php_version: "7.1"
+    github_webhook_secret_definition: "{{ lookup('password', '/dev/null length=40 chars=ascii_letters') }}"
+    database_engine: mysql
+    opcache_revalidate_freq: 2
+  tasks:
+    - name: Define secret's passwords
+      run_once: true
+      set_fact:
+        database_password: "{{ database_password_definition }}"  
+        cakephp_secret_token: "{{ cakephp_secret_token_definition }}"
+        cakephp_security_salt: "{{ cakephp_security_salt_definition }}"
+        github_webhook_secret: "{{ github_webhook_secret_definition }}" 
+    - name: Install openshift python package
+      yum: 
+          state: latest 
+          name: 
+            - python2-openshift
+    - name: Create {{ namespace }} namespace
+      run_once: true
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: "{{ namespace }}"
+        state: present
+    - name: Create Secret
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ secret_name }}"
+          stringData:
+            cakephp-secret-token: "{{ cakephp_secret_token }}"
+            cakephp-security-salt: "{{ cakephp_security_salt }}"
+            database-password: "{{ database_password }}"
+            database-user: "{{ database_user }}"
+    - name: Create Database Service 
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+              description: Exposes the database server
+            name: "{{ database_service_name }}"
+          spec:
+            ports:
+            - name: mysql
+              port: 3306
+              targetPort: 3306
+            selector:
+              name: "{{ database_service_name }}"
+    - name: Create Mysql DeploymentConfig
+      run_once: true
+      k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'mysql-dc.yml') }}"
+    - name: Create Application service
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+              description: Exposes and load balances the application pods
+            name: "{{ app_name }}"
+          spec:
+            ports:
+            - name: web
+              port: 8080
+              targetPort: 8080
+            selector:
+              name: "{{ app_name }}" 
+    - name: Create cakephp Image stream 
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ app_name }}"
+    - name: Create cakephp Buildconfig
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'cakephp-buildconfig.yml') }}"
+    - name: Create Cakephp Deployment config
+      run_once: true
+      k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'cakephp-dc.yml') }}"
+    - name: Create Cakephp entry Route
+      run_once: true
+      k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ app_name }}"
+          spec:
+            to:
+              kind: Service
+              name: "{{ app_name }}"
+
+- name: Deploy Image Uploader with no persistent storage
+  hosts: masters
+  vars:
+    namespace: imageuploader
+    app_name: image-uploader
+    source_repository_url: https://github.com/OpenShiftInAction/image-uploader.git
+    php_version: "7.1"
+    github_webhook_secret_definition: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+  tasks:
+    - name: Define secret's passwords
+      run_once: true
+      set_fact:
+        github_webhook_secret: "{{ github_webhook_secret_definition }}" 
+    - name: Create {{ namespace }} namespace
+      run_once: true
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: "{{ namespace }}"
+        state: present
+    - name: Create Service 
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+              description: Exposes the database server
+            labels:
+              app: "{{ app_name }}"
+            name: "{{ app_name }}"
+          spec:
+            ports:
+            - name: 8080-tcp
+              port: 8080
+              protocol: TCP
+              targetPort: 8080
+            - name: 8443-tcp
+              port: 8443
+              protocol: TCP
+              targetPort: 8443
+            selector:
+              app: "{{ app_name }}"
+              deploymentconfig: "{{ app_name }}"
+    - name: Create Image Uploader DeploymentConfig
+      run_once: true
+      k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'imageuploader-dc.yml') }}"
+    - name: Create Image Uploader Image stream 
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ app_name }}"
+    - name: Create  Image Uploader Buildconfig
+      run_once: true
+      k8s:
+        api_version: v1
+        state: present
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'imageuploader-bc.yml') }}"
+    - name: Create Image Uploader entry Route
+      run_once: true
+      k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ app_name }}"
+          spec:
+            port:
+              targetPort: 8080-tcp
+            to:
+              kind: Service
+              name: "{{ app_name }}"
+...

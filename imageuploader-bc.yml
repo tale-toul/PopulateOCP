@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  annotations:
+    description: Defines how to build the application
+    template.alpha.openshift.io/wait-for-ready: "true"
+  labels:
+    app: "{{ app_name }}"
+  name: "{{ app_name }}"
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "{{ app_name }}:latest"
+  source:
+    git:
+      uri: "{{ source_repository_url }}"
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: "php:{{ php_version }}"
+        namespace: openshift
+    type: Source
+  triggers:
+  - github:
+      secret: "{{ github_webhook_secret }}"
+    type: GitHub
+  - type: ConfigChange
+  - type: ImageChange
+...
