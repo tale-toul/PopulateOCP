@@ -1,6 +1,7 @@
 ---
 # defaults file for todoapp
 namespace: todoapp
+todo_state: present
 todo_app_name: todo-app
 mongodb_application_name: mongodb
 mongodb_user_definition: "{{ lookup('password', '/dev/null length=8 chars=ascii_letters') }}"

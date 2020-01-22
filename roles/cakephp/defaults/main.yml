@@ -1,5 +1,6 @@
 ---
 # defaults file for cakephp
+cakephp_state: present
 database_password_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
 cakephp_secret_token_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
 cakephp_security_salt_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"

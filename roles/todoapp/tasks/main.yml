@@ -16,12 +16,12 @@
     api_version: v1
     kind: Namespace
     name: "{{ namespace }}"
-    state: present
+    state: "{{ todo_state }}"
 - name: Add edit role to default user in {{ namespace }}
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -38,7 +38,7 @@
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -60,7 +60,7 @@
 - name: Create {{ namespace }} PVC for {{ mongodb_application_name }}
   run_once: true
   k8s: 
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -76,14 +76,14 @@
 - name: Create MongoDB DeploymentConfig
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'mongodb-dc.yml') }}"
 - name: Create {{ todo_app_name }} Image stream 
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -97,20 +97,20 @@
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'todoapp-bc.yml') }}"
 - name: Create {{ todo_app_name }} DeploymentConfig
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'todoapp-dc.yml') }}"
 - name: Create {{ todo_app_name }} Service 
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -132,7 +132,7 @@
 - name: Create {{ todo_app_name }} entry Route
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -152,7 +152,7 @@
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -177,7 +177,7 @@
 - name: Create Gogs entry Route
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -196,7 +196,7 @@
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -217,7 +217,7 @@
 - name: Create {{ namespace }} PVC for gogs
   run_once: true
   k8s: 
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -233,14 +233,14 @@
 - name: Create Gogs DeploymentConfig
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'gogs-dc.yml') }}"
 - name: Create PostgreSQL Service 
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -262,7 +262,7 @@
 - name: Create {{ namespace }} PVC for postgresql-gogs
   run_once: true
   k8s: 
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -278,14 +278,14 @@
 - name: Create PostgreSQL DeploymentConfig
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'postgresql-dc.yml') }}"
 - name: Deploy install gogs pod
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -326,7 +326,7 @@
 - name: Create install gogs config map 
   run_once: true
   k8s:
-    state: present
+    state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'install-gogs-cm.yml') }}"
 

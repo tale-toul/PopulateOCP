@@ -10,12 +10,12 @@
     api_version: v1
     kind: Namespace
     name: "{{ namespace }}"
-    state: present
+    state: "{{ imageuploader_state }}"
 - name: Create Service 
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -42,7 +42,7 @@
 - name: Create {{ namespace }} PVC
   run_once: true
   k8s: 
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -58,14 +58,14 @@
 - name: Create Image Uploader DeploymentConfig
   run_once: true
   k8s:
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'imageuploader-dc.yml') }}"
 - name: Create Image Uploader Image stream 
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1
@@ -78,13 +78,13 @@
   run_once: true
   k8s:
     api_version: v1
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'imageuploader-bc.yml') }}"
 - name: Create Image Uploader entry Route
   run_once: true
   k8s:
-    state: present
+    state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
       apiVersion: v1

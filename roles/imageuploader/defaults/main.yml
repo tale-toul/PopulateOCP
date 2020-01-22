@@ -1,6 +1,7 @@
 ---
 # defaults file for imageuploader
 namespace: imageuploader
+imageuploader_state: present
 imageuploader_app_name: image-uploader
 source_repository_url: https://github.com/OpenShiftInAction/image-uploader.git
 php_version: "7.1"
