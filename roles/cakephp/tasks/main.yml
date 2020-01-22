@@ -1,0 +1,119 @@
+---
+# tasks file for cakephp
+- name: Define secret's passwords
+  run_once: true
+  set_fact:
+    database_password: "{{ database_password_definition }}"  
+    cakephp_secret_token: "{{ cakephp_secret_token_definition }}"
+    cakephp_security_salt: "{{ cakephp_security_salt_definition }}"
+    github_webhook_secret: "{{ github_webhook_secret_definition }}" 
+- name: Create {{ namespace }} namespace
+  run_once: true
+  k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ namespace }}"
+    state: present
+- name: Create Secret
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ secret_name }}"
+      stringData:
+        cakephp-secret-token: "{{ cakephp_secret_token }}"
+        cakephp-security-salt: "{{ cakephp_security_salt }}"
+        database-password: "{{ database_password }}"
+        database-user: "{{ database_user }}"
+- name: Create Database Service 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        annotations:
+          description: Exposes the database server
+        name: "{{ database_service_name }}"
+      spec:
+        ports:
+        - name: mysql
+          port: 3306
+          targetPort: 3306
+        selector:
+          name: "{{ database_service_name }}"
+- name: Create Mysql DeploymentConfig
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'mysql-dc.yml') }}"
+- name: Create Application service
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        annotations:
+          description: Exposes and load balances the application pods
+        name: "{{ cakephp_app_name }}"
+      spec:
+        ports:
+        - name: web
+          port: 8080
+          targetPort: 8080
+        selector:
+          name: "{{ cakephp_app_name }}" 
+- name: Create cakephp Image stream 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: ImageStream
+      metadata:
+        annotations:
+          description: Keeps track of changes in the application image
+        name: "{{ cakephp_app_name }}"
+- name: Create cakephp Buildconfig
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'cakephp-buildconfig.yml') }}"
+- name: Create Cakephp Deployment config
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'cakephp-dc.yml') }}"
+- name: Create Cakephp entry Route
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Route
+      metadata:
+        name: "{{ cakephp_app_name }}"
+      spec:
+        to:
+          kind: Service
+          name: "{{ cakephp_app_name }}"
+...

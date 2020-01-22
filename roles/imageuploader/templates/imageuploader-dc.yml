@@ -3,25 +3,25 @@ apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 metadata:
   labels:
-    app: "{{ app_name }}"
-  name: "{{ app_name }}"
+    app: "{{ imageuploader_app_name }}"
+  name: "{{ imageuploader_app_name }}"
 spec:
   replicas: 1
   selector:
-    app: "{{ app_name }}"
-    deploymentconfig: "{{ app_name }}"
+    app: "{{ imageuploader_app_name }}"
+    deploymentconfig: "{{ imageuploader_app_name }}"
   strategy:
     type: Rolling
   template:
     metadata:
       labels:
-        app: "{{ app_name }}"
-        deploymentconfig: "{{ app_name }}"
+        app: "{{ imageuploader_app_name }}"
+        deploymentconfig: "{{ imageuploader_app_name }}"
     spec:
       containers:
       - image: ' '
         imagePullPolicy: Always
-        name: "{{ app_name }}"
+        name: "{{ imageuploader_app_name }}"
         ports:
         - containerPort: 8080
           protocol: TCP
@@ -43,16 +43,16 @@ spec:
       volumes:
       - name: volume-z644l
         persistentVolumeClaim:
-          claimName: "{{ app_name }}"
+          claimName: "{{ imageuploader_app_name }}"
   triggers:
   - type: ConfigChange
   - imageChangeParams:
       automatic: true
       containerNames:
-      - "{{ app_name }}"
+      - "{{ imageuploader_app_name }}"
       from:
         kind: ImageStreamTag
-        name: "{{ app_name }}:latest"
+        name: "{{ imageuploader_app_name }}:latest"
         namespace: "{{ namespace }}"
     type: ImageChange
 ...

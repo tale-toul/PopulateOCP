@@ -1,0 +1,8 @@
+---
+# defaults file for imageuploader
+namespace: imageuploader
+imageuploader_app_name: image-uploader
+source_repository_url: https://github.com/OpenShiftInAction/image-uploader.git
+php_version: "7.1"
+github_webhook_secret_definition: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+

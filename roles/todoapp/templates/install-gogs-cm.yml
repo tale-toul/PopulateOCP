@@ -135,7 +135,7 @@ data:
     {
       "type": "gogs",
       "config": {
-        "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/${DEV_PROJECT}/buildconfigs/{{ app_name }}/webhooks/{{ generic_trigger_secret }}/generic",
+        "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/${DEV_PROJECT}/buildconfigs/{{ todo_app_name }}/webhooks/{{ generic_trigger_secret }}/generic",
         "content_type": "json"
       },
       "events": [
@@ -159,9 +159,9 @@ data:
     echo newgiturl=$newgiturl
     export patchstr={\"spec\":{\"source\":{\"git\":{\"uri\":\"$newgiturl\"}}}}
     echo $patchstr
-    oc patch bc {{ app_name }} -p $patchstr
+    oc patch bc {{ todo_app_name }} -p $patchstr
 
-    oc start-build {{ app_name }}
+    oc start-build {{ todo_app_name }}
 kind: ConfigMap
 metadata:
       name: gogs-install

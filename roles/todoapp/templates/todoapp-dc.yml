@@ -3,18 +3,18 @@ apiVersion: v1
 kind: DeploymentConfig
 metadata:
   labels:
-    component: "{{ app_name }}"
-  name: "{{ app_name }}"
+    component: "{{ todo_app_name }}"
+  name: "{{ todo_app_name }}"
 spec:
   replicas: 1
   selector:
-    component: "{{ app_name }}"
+    component: "{{ todo_app_name }}"
   strategy:
     type: Rolling
   template:
     metadata:
       labels:
-        component: "{{ app_name }}"
+        component: "{{ todo_app_name }}"
     spec:
       containers:
       - env:
@@ -26,9 +26,9 @@ spec:
           value: "{{ mongodb_application_name }}"
         - name: MONGO_CONNECTION_URI
           value: "mongodb://{{ mongodb_user }}:{{ mongodb_password }}@{{ mongodb_application_name }}/{{ mongodb_database }}"
-        image: "{{ app_name }}"
+        image: "{{ todo_app_name }}"
         imagePullPolicy: IfNotPresent
-        name: "{{ app_name }}"
+        name: "{{ todo_app_name }}"
         ports:
         - containerPort: 8080
           protocol: TCP
@@ -43,9 +43,9 @@ spec:
   - imageChangeParams:
       automatic: true
       containerNames:
-      - "{{ app_name }}"
+      - "{{ todo_app_name }}"
       from:
         kind: ImageStreamTag
-        name: "{{ app_name }}:latest"
+        name: "{{ todo_app_name }}:latest"
     type: ImageChange
 ...

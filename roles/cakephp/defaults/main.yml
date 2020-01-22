@@ -1,0 +1,17 @@
+---
+# defaults file for cakephp
+database_password_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+cakephp_secret_token_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+cakephp_security_salt_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
+database_name: default
+database_user: cakephp
+namespace: cakephp
+cakephp_app_name: cakephp-mysql-example
+secret_name: cakesecret
+database_service_name: mysql
+source_repository_url: https://github.com/sclorg/cakephp-ex.git
+php_version: "7.1"
+github_webhook_secret_definition: "{{ lookup('password', '/dev/null length=40 chars=ascii_letters') }}"
+database_engine: mysql
+opcache_revalidate_freq: 2
+...

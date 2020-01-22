@@ -1,0 +1,332 @@
+---
+# tasks file for todoapp
+- name: Fix random variables
+  run_once: true
+  set_fact:
+    mongodb_user: "{{ mongodb_user_definition }}"  
+    mongodb_password: "{{ mongodb_password_definition }}"
+    mongodb_admin_password: "{{ mongodb_admin_password_definition }}" 
+    github_trigger_secret: "{{ github_trigger_secret_definition }}"
+    generic_trigger_secret: "{{ generic_trigger_secret_definition }}"
+    gogs_postgresql_password: "{{ gogs_postgresql_password_definition }}"
+    gogs_password: "{{ gogs_password_definition }}"
+- name: Create {{ namespace }} namespace
+  run_once: true
+  k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ namespace }}"
+    state: present
+- name: Add edit role to default user in {{ namespace }}
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      groupNames: null
+      kind: RoleBinding
+      metadata:
+        name: default_edit
+      roleRef:
+        name: edit
+      subjects:
+      - kind: ServiceAccount
+        name: default
+- name: Create MongoDB Service 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          component: "{{ mongodb_application_name }}"
+        name: "{{ mongodb_application_name }}"
+      spec:
+        ports:
+        - name: mongo
+          port: 27017
+          protocol: TCP
+          targetPort: 27017
+        selector:
+          name: "{{ mongodb_application_name }}"
+        sessionAffinity: None
+        type: ClusterIP
+- name: Create {{ namespace }} PVC for {{ mongodb_application_name }}
+  run_once: true
+  k8s: 
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ mongodb_application_name }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi 
+- name: Create MongoDB DeploymentConfig
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'mongodb-dc.yml') }}"
+- name: Create {{ todo_app_name }} Image stream 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: ImageStream
+      metadata:
+        name: "{{ todo_app_name }}"
+      spec:
+        tags:
+        - name: latest
+- name: Create {{ todo_app_name }} Buildconfig
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'todoapp-bc.yml') }}"
+- name: Create {{ todo_app_name }} DeploymentConfig
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'todoapp-dc.yml') }}"
+- name: Create {{ todo_app_name }} Service 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          component: "{{ todo_app_name }}"
+        name: "{{ todo_app_name }}"
+      spec:
+        ports:
+        - name: 8080-tcp
+          port: 8080
+          protocol: TCP
+          targetPort: 5000
+        selector:
+          component: "{{ todo_app_name }}"
+        sessionAffinity: None
+        type: ClusterIP
+- name: Create {{ todo_app_name }} entry Route
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Route
+      metadata:
+        labels:
+          component: "{{ todo_app_name }}"
+        name: "{{ todo_app_name }}"
+      spec:
+        port:
+          targetPort: 8080-tcp
+        to:
+          kind: Service
+          name: "{{ todo_app_name }}"
+          weight: 100
+- name: Create gogs Service 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        annotations:
+          description: The Gogs server's http port
+        labels:
+          app: gogs
+        name: gogs
+      spec:
+        ports:
+        - name: web
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+        selector:
+          app: gogs
+          deploymentconfig: gogs
+        sessionAffinity: None
+        type: ClusterIP
+- name: Create Gogs entry Route
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Route
+      metadata:
+        annotations:
+          description: Route for gogs's http service.
+        labels:
+          app: gogs
+        name: gogs
+      spec:
+        to:
+          kind: Service
+          name: gogs
+- name: Create Gogs Image stream 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: ImageStream
+      metadata:
+        labels:
+          app: gogs
+        name: gogs
+      spec:
+        tags:
+        - annotations:
+            description: The Gogs git server docker image
+            tags: gogs,go,golang
+          from:
+            kind: DockerImage
+            name: "openshiftdemos/gogs:{{ gogs_version }}"
+          name: "{{ gogs_version }}"
+- name: Create {{ namespace }} PVC for gogs
+  run_once: true
+  k8s: 
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: gogs
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi 
+- name: Create Gogs DeploymentConfig
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'gogs-dc.yml') }}"
+- name: Create PostgreSQL Service 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          app: postgresql-gogs
+        name: postgresql-gogs
+      spec:
+        ports:
+        - name: postgresql
+          port: 5432
+          protocol: TCP
+          targetPort: 5432
+        selector:
+          app: postgresql-gogs
+        sessionAffinity: None
+        type: ClusterIP
+- name: Create {{ namespace }} PVC for postgresql-gogs
+  run_once: true
+  k8s: 
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: postgresql-gogs
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi 
+- name: Create PostgreSQL DeploymentConfig
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'postgresql-dc.yml') }}"
+- name: Deploy install gogs pod
+  run_once: true
+  k8s:
+    api_version: v1
+    state: present
+    namespace: "{{ namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          template.alpha.openshift.io/wait-for-ready: "true"
+        labels:
+          app: gogs
+          job: install-gogs
+        name: install-gogs
+      spec:
+        containers:
+        - command:
+          - /bin/bash
+          - /tmp/install/installgogs.sh
+          env:
+          - name: DEV_PROJECT
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          image: docker.io/openshiftdemos/oc
+          name: oc
+          resources:
+            limits:
+              memory: 128Mi
+          volumeMounts:
+          - mountPath: /tmp/install
+            name: gogs-install
+        restartPolicy: Never
+        volumes:
+        - configMap:
+            items:
+            - key: installgogs.sh
+              path: installgogs.sh
+            name: gogs-install
+          name: gogs-install
+- name: Create install gogs config map 
+  run_once: true
+  k8s:
+    state: present
+    namespace: "{{ namespace }}"
+    definition: "{{ lookup('template', 'install-gogs-cm.yml') }}"
+

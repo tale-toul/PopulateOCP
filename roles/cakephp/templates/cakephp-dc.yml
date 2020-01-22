@@ -5,11 +5,11 @@ metadata:
   annotations:
     description: Defines how to deploy the application server
     template.alpha.openshift.io/wait-for-ready: "true"
-  name: "{{ app_name }}"
+  name: "{{ cakephp_app_name }}"
 spec:
   replicas: 1
   selector:
-    name: "{{ app_name }}"
+    name: "{{ cakephp_app_name }}"
   strategy:
     recreateParams:
       pre:
@@ -22,8 +22,8 @@ spec:
   template:
     metadata:
       labels:
-        name: "{{ app_name }}"
-      name: "{{ app_name }}"
+        name: "{{ cakephp_app_name }}"
+      name: "{{ cakephp_app_name }}"
     spec:
       containers:
       - env:
@@ -63,7 +63,7 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 60
           timeoutSeconds: 3
-        name: "{{ app_name }}"
+        name: "{{ cakephp_app_name }}"
         ports:
         - containerPort: 8080
         readinessProbe:
@@ -80,10 +80,10 @@ spec:
   - imageChangeParams:
       automatic: true
       containerNames:
-      - "{{ app_name }}"
+      - "{{ cakephp_app_name }}"
       from:
         kind: ImageStreamTag
-        name: "{{ app_name }}:latest"
+        name: "{{ cakephp_app_name }}:latest"
     type: ImageChange
   - type: ConfigChange
 ...
