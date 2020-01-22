@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    build: "{{ app_name }}"
+  name: "{{ app_name }}"
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "{{ app_name }}:latest"
+  runPolicy: Serial
+  source:
+    contextDir: "{{ context_dir }}"
+    git:
+      ref: "{{ git_ref }}"
+      uri: "{{ git_uri }}"
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: python:3.5
+        namespace: openshift
+      incremental: false
+    type: Source
+  triggers:
+  - github:
+      secret: "{{ github_trigger_secret }}"
+    type: GitHub
+  - generic:
+      secret: "{{ generic_trigger_secret }}"
+    type: Generic
+...
