@@ -66,8 +66,9 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       volumes:
-      - emptyDir: {}
-        name: mongodb-data
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: "{{ mongodb_application_name }}"
   test: false
   triggers:
   - imageChangeParams:

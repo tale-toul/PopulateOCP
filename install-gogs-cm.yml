@@ -104,7 +104,31 @@ data:
       exit 255
     fi
 
+    for repo in https://github.com/gogs/gogs,gogs https://github.com/sonatype/docker-nexus,docker-nexus https://github.com/gogs/docs-api,docs-api https://github.com/containous/traefik,traefik; do
+    IFS=","
+    set -- $repo
+    # import github repositories
+    cat <<EOF > /tmp/data.json
+    {
+      "clone_addr": "$1",
+      "uid": 1,
+      "repo_name": "$2"
+    }
+    EOF
+
+    RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
+    -u gogs:{{ gogs_password }} -X POST http://${GOGSSVC}:3000/api/v1/repos/migrate -d @/tmp/data.json)
+
+    if [ $RETURN != "201" ]
+    then
+      echo "ERROR: Failed to import $repo GitHub repo"
+      exit 255
+    fi
+
+    done
+
     sleep 5
+
 
     # add webhook to Gogs to trigger pipeline on push
     cat <<EOF > /tmp/data.json

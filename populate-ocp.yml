@@ -326,6 +326,22 @@
               name: "{{ mongodb_application_name }}"
             sessionAffinity: None
             type: ClusterIP
+    - name: Create {{ namespace }} PVC for {{ mongodb_application_name }}
+      run_once: true
+      k8s: 
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: "{{ mongodb_application_name }}"
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi 
     - name: Create MongoDB DeploymentConfig
       run_once: true
       k8s:
@@ -467,6 +483,22 @@
                 kind: DockerImage
                 name: "openshiftdemos/gogs:{{ gogs_version }}"
               name: "{{ gogs_version }}"
+    - name: Create {{ namespace }} PVC for gogs
+      run_once: true
+      k8s: 
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: gogs
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi 
     - name: Create Gogs DeploymentConfig
       run_once: true
       k8s:
@@ -496,6 +528,22 @@
               app: postgresql-gogs
             sessionAffinity: None
             type: ClusterIP
+    - name: Create {{ namespace }} PVC for postgresql-gogs
+      run_once: true
+      k8s: 
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: postgresql-gogs
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi 
     - name: Create PostgreSQL DeploymentConfig
       run_once: true
       k8s:

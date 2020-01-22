@@ -56,8 +56,9 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       volumes:
-      - emptyDir: {}
-        name: gogs-data
+      - name: gogs-data
+        persistentVolumeClaim:
+          claimName: gogs
   triggers:
   - type: ConfigChange
   - imageChangeParams:

@@ -66,8 +66,9 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       volumes:
-      - emptyDir: {}
-        name: postgresql-data
+      - name: postgresql-data
+        persistentVolumeClaim:
+          claimName: postgresql-gogs
   triggers:
   - imageChangeParams:
       automatic: true
