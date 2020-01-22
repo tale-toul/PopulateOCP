@@ -7,7 +7,7 @@
           state: latest 
           name: 
             - python2-openshift
-- name: Deploy Cakephp with no persistent storage
+- name: Deploy Cakephp with NO persistent storage
   hosts: masters
   vars:
     database_password_definition: "{{ lookup('password', '/dev/null length=10 chars=ascii_letters') }}"
@@ -142,7 +142,7 @@
               kind: Service
               name: "{{ app_name }}"
 
-- name: Deploy Image Uploader with no persistent storage
+- name: Deploy Image Uploader with PERSISTENT storage
   hosts: masters
   vars:
     namespace: imageuploader
@@ -190,6 +190,22 @@
             selector:
               app: "{{ app_name }}"
               deploymentconfig: "{{ app_name }}"
+    - name: Create {{ namespace }} PVC
+      run_once: true
+      k8s: 
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: "{{ app_name }}"
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi 
     - name: Create Image Uploader DeploymentConfig
       run_once: true
       k8s:

@@ -30,6 +30,9 @@ spec:
         resources: 
           limits:
             memory: 512Mi
+        volumeMounts:
+        - mountPath: /opt/app-root/src/uploads
+          name: volume-z644l
         livenessProbe:
           httpGet:
             path: /
@@ -37,6 +40,10 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 5
           timeoutSeconds: 1
+      volumes:
+      - name: volume-z644l
+        persistentVolumeClaim:
+          claimName: "{{ app_name }}"
   triggers:
   - type: ConfigChange
   - imageChangeParams:
