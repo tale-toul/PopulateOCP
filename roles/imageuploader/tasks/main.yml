@@ -97,4 +97,19 @@
         to:
           kind: Service
           name: "{{ imageuploader_app_name }}"
-
+- name: "Waiting for Image Uploader Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: "{{ imageuploader_app_name }}"
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+  failed_when: false
+...

@@ -329,4 +329,64 @@
     state: "{{ todo_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'install-gogs-cm.yml') }}"
-
+- name: "Waiting for MongoDB Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: "{{ mongodb_application_name }}"
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+  failed_when: false
+- name: "Waiting for PostGreSQL Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: postgresql-gogs
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+  failed_when: false
+- name: "Waiting for Gogs Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: gogs
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+  failed_when: false
+- name: "Waiting for ToDoApp Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: "{{ todo_app_name }}"
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 20
+  delay: 30
+  failed_when: false
+...

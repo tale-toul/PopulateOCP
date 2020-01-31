@@ -1,0 +1,149 @@
+---
+- name: Create {{ rocket_namespace }} namespace
+  run_once: true
+  k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ rocket_namespace }}"
+    state: "{{ rocket_state }}"
+- name: Create MongoDB Headless Service
+  run_once: true
+  k8s:
+    api_version: v1
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition:
+      kind: Service
+      apiVersion: v1
+      metadata:
+        name: "mongodb-internal"
+        labels:
+          name: "mongodb"
+        annotations:
+          service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+      spec:
+        clusterIP: None
+        ports:
+          - name: mongodb
+            port: 27017
+        selector:
+          name: "mongodb"
+- name: Create MongoDB regular Service
+  run_once: true
+  k8s:
+    api_version: v1
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition:
+      kind: Service
+      apiVersion: v1
+      metadata:
+        name: "mongodb"
+        labels:
+          name: "mongodb"
+      spec:
+        ports:
+          - name: mongodb
+            port: 27017
+        selector:
+          name: "mongodb"     
+- name: Create MongoDB StatefulSet
+  run_once: true
+  k8s:
+    api_version: v1
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition: "{{ lookup('template', 'mongodb-ss.yml') }}"
+- name: Create Rocket Service
+  run_once: true
+  k8s:
+    api_version: v1
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition:
+      kind: Service
+      apiVersion: v1
+      metadata:
+        annotations:
+          description: Exposes and load balances the application pods
+        name: "{{ rocket_app_name }}"
+      spec:
+        ports:
+          - name: 3000-tcp
+            port: 3000
+            protocol: TCP
+            targetPort: 3000
+        selector:
+          app: "{{ rocket_app_name }}" 
+- name: Create Rocket Image Stream 
+  run_once: true
+  k8s:
+    api_version: v1
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition:
+      apiVersion: v1
+      kind: ImageStream
+      metadata:
+        annotations:
+          description: Keeps track of changes in the application image
+        name: "{{ rocket_app_name }}"
+      spec:
+        tags:
+        - annotations:
+            openshift.io/imported-from: docker.io/rocketchat/rocket.chat:0.63.3
+          from:
+            kind: DockerImage
+            name: docker.io/rocketchat/rocket.chat:0.63.3
+          name: 0.63.3
+- name: Create Rocket Deployment Config
+  run_once: true
+  k8s:
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition: "{{ lookup('template', 'rocket-dc.yml') }}"
+- name: Create Rocket entry Route
+  run_once: true
+  k8s:
+    state: "{{ rocket_state }}"
+    namespace: "{{ rocket_namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Route
+      metadata:
+        name: "{{ rocket_app_name }}"
+      spec:
+        to:
+          kind: Service
+          name: "{{ rocket_app_name }}"
+- name: "Waiting for MongoDB StatefulSet to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: mongodb
+    namespace: "{{ rocket_namespace }}"
+    kind: statefulset
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas == _dc_output.module_results.results[0].spec.replicas
+  retries: 20
+  delay: 30
+  failed_when: false
+- name: "Waiting for Rocket Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: "{{ rocket_app_name }}"
+    namespace: "{{ rocket_namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+  failed_when: false
+...

@@ -7,13 +7,24 @@
     cakephp_secret_token: "{{ cakephp_secret_token_definition }}"
     cakephp_security_salt: "{{ cakephp_security_salt_definition }}"
     github_webhook_secret: "{{ github_webhook_secret_definition }}" 
+- name: Log in (obtain access token)
+  k8s_auth:
+    host: https://api.tale.ocpext.rhcee.support:6443
+    validate_certs: no
+    username: 
+    password: 
+  register: _auth_result
 - name: Create {{ namespace }} namespace
   run_once: true
   k8s:
+    api_key: "{{ _auth.k8s_auth.api_key }}"
+    host: https://api.tale.ocpext.rhcee.support:6443
     api_version: v1
+    ca_cert: ingress-ca.crt
     kind: Namespace
     name: "{{ namespace }}"
     state: "{{ cakephp_state }}"
+- pause:
 - name: Create Secret
   run_once: true
   k8s:
@@ -56,7 +67,7 @@
     state: "{{ cakephp_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'mysql-dc.yml') }}"
-- name: Create Application service
+- name: Create CakePhP service
   run_once: true
   k8s:
     api_version: v1
@@ -116,4 +127,40 @@
         to:
           kind: Service
           name: "{{ cakephp_app_name }}"
+- name: "Waiting for Mysql Deployment to complete" 
+#  run_once: true
+#  oc_obj:
+#    state: list
+#    name: "{{ database_service_name }}"
+#    namespace: "{{ namespace }}"
+#    kind: dc
+  k8s_facts:
+    api_version: v1
+    kind: DeploymentConfig
+    namespace: "{{ namespace }}"
+  register: _dc_output
+  until:
+    - _dc_output.resources[0].status is defined
+    - _dc_output.resources[0].status.readyReplicas is defined
+    - _dc_output.resources[0].status.readyReplicas > 0
+#    - _dc_output.module_results.results[0].status is defined
+#    - _dc_output.module_results.results[0].status.readyReplicas is defined
+#    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 20
+- pause:
+- name: "Waiting for CakePhP Deployment to complete" 
+  run_once: true
+  oc_obj:
+    state: list
+    name: "{{ cakephp_app_name }}"
+    namespace: "{{ namespace }}"
+    kind: dc
+  register: _dc_output
+  until:
+    - _dc_output.module_results.results[0].status is defined
+    - _dc_output.module_results.results[0].status.readyReplicas is defined
+    - _dc_output.module_results.results[0].status.readyReplicas > 0
+  retries: 10
+  delay: 30
 ...

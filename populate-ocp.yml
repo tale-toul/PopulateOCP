@@ -1,6 +1,7 @@
 ---
 - name: Populate OpenShift with projects
-  hosts: masters
+  hosts: 127.0.0.1
+  connection: local
   tasks:
     - name: Install openshift python package
       yum: 
@@ -10,8 +11,13 @@
     - name: Deploy Cakephp with NO persistent storage
       include_role:
         name: cakephp
-    - include_role:
+    - name: Deploy Image Uploader with persistent storage
+      include_role:
         name: imageuploader
-    - include_role:
+    - name: Deploy Todo application, including mongodb, postgresql, gogs, all with persistent storage
+      include_role:
         name: todoapp
+    - name: Deploy rocket chat with mongodb stateful set and persistent storage
+      include_role:
+        name: rocket
 ...
