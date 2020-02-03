@@ -31,3 +31,8 @@ Finally install the python openshift client package for the python 2 or 3 versio
 # yum install python2-openshift
 ```
 
+## Security considerations
+
+Given that this are test cases not meant for production systems, security is lax. 
+
+* The passwords defined for the cakephp applications are defined in the clear: database_password; cakephp_secret_token; cakephp_security_salt; github_webhook_secret.  They should be defined in a "_vaulted_" file.

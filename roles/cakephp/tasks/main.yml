@@ -1,10 +1,4 @@
 ---
-- name: Define secret's passwords
-  set_fact:
-    database_password: "{{ database_password_definition }}"  
-    cakephp_secret_token: "{{ cakephp_secret_token_definition }}"
-    cakephp_security_salt: "{{ cakephp_security_salt_definition }}"
-    github_webhook_secret: "{{ github_webhook_secret_definition }}" 
 - name: Create {{ namespace }} namespace
   k8s:
     api_key: "{{ _auth_result.k8s_auth.api_key }}"

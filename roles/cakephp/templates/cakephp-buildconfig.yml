@@ -25,7 +25,6 @@ spec:
         namespace: openshift
     type: Source
   triggers:
-  - type: ImageChange
   - type: ConfigChange
   - github:
       secret: "{{ github_webhook_secret }}"
