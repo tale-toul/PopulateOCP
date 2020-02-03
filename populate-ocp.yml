@@ -2,22 +2,53 @@
 - name: Populate OpenShift with projects
   hosts: 127.0.0.1
   connection: local
+  vars:
+    cakephp_state: "present"
+    imageuploader_state: "present"
+    rocket_state: "present"
+    todo_state: "present"
+#    api_ca_cert: "ingress-ca.crt"
+#    api_entrypoint: "https://api.tale.ocpext.rhcee.support:6443"
+    api_ca_cert: "ca-bundle.crt"
+    api_entrypoint: "https://master.ocpext.rhcee.support:443"
+  module_defaults:
+    group/k8s:
+      host: "{{ api_entrypoint }}"
+      ca_cert: "{{ api_ca_cert }}"
   tasks:
-    - name: Install openshift python package
-      yum: 
-          state: latest 
-          name: 
-            - python2-openshift
+    - name: Log in to obtain access token
+      k8s_auth:
+        username: "{{ ocp_user }}"
+        password: "{{ ocp_pass }}"
+      register: _auth_result
+    - name: detect OCP version 3 or 4
+      uri:
+        url: "{{ api_entrypoint }}/version"
+        validate_certs: no
+        method: GET
+        headers:
+          Authorization: Bearer {{ _auth_result.k8s_auth.api_key }}
+          Accept: application/json, */*
+      register: _version
+    - set_fact:
+        current_ocp_version: "{{ _version.json.minor|regex_replace('(..).*$','\\1') }}"
     - name: Deploy Cakephp with NO persistent storage
       include_role:
         name: cakephp
-    - name: Deploy Image Uploader with persistent storage
-      include_role:
-        name: imageuploader
-    - name: Deploy Todo application, including mongodb, postgresql, gogs, all with persistent storage
-      include_role:
-        name: todoapp
-    - name: Deploy rocket chat with mongodb stateful set and persistent storage
-      include_role:
-        name: rocket
+#    - name: Deploy Image Uploader with persistent storage
+#      include_role:
+#        name: imageuploader
+#    - name: Deploy Todo application, including mongodb, postgresql, gogs, all with persistent storage
+#      include_role:
+#        name: todoapp
+#      # Minor version 11 is the highest in OCP 3 branch, for 3.11
+#      when: current_ocp_version|int <= 11 or todo_state == "absent"
+#    - name: Deploy rocket chat with mongodb stateful set and persistent storage
+#      include_role:
+#        name: rocket
+    - name: Log out to revoke access token
+      k8s_auth:
+        state: absent
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+      when: _auth_result.k8s_auth.api_key is defined
 ...

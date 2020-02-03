@@ -1,5 +1,4 @@
 .*.swp
-ansible.log
-ansible.cfg
-inventario
-ssh.cfg
+ca-bundle.crt
+ingress-ca.crt
+vault-id

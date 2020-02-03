@@ -1,19 +1,18 @@
 ---
 # tasks file for imageuploader
 - name: Define secret's passwords
-  run_once: true
   set_fact:
     github_webhook_secret: "{{ github_webhook_secret_definition }}" 
 - name: Create {{ namespace }} namespace
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     kind: Namespace
     name: "{{ namespace }}"
     state: "{{ imageuploader_state }}"
 - name: Create Service 
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
@@ -40,8 +39,9 @@
           app: "{{ imageuploader_app_name }}"
           deploymentconfig: "{{ imageuploader_app_name }}"
 - name: Create {{ namespace }} PVC
-  run_once: true
   k8s: 
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
@@ -56,14 +56,15 @@
           requests:
             storage: 2Gi 
 - name: Create Image Uploader DeploymentConfig
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'imageuploader-dc.yml') }}"
 - name: Create Image Uploader Image stream 
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
@@ -75,15 +76,16 @@
           description: Keeps track of changes in the application image
         name: "{{ imageuploader_app_name }}"
 - name: Create  Image Uploader Buildconfig
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition: "{{ lookup('template', 'imageuploader-bc.yml') }}"
 - name: Create Image Uploader entry Route
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: v1
     state: "{{ imageuploader_state }}"
     namespace: "{{ namespace }}"
     definition:
@@ -97,19 +99,20 @@
         to:
           kind: Service
           name: "{{ imageuploader_app_name }}"
+
+#Verify that deployments are successful
 - name: "Waiting for Image Uploader Deployment to complete" 
-  run_once: true
-  oc_obj:
-    state: list
+  k8s_info:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     name: "{{ imageuploader_app_name }}"
     namespace: "{{ namespace }}"
-    kind: dc
+    kind: DeploymentConfig
+  when: imageuploader_state == "present"
   register: _dc_output
   until:
-    - _dc_output.module_results.results[0].status is defined
-    - _dc_output.module_results.results[0].status.readyReplicas is defined
-    - _dc_output.module_results.results[0].status.readyReplicas > 0
+    - _dc_output.resources[0].status is defined
+    - _dc_output.resources[0].status.readyReplicas is defined
+    - _dc_output.resources[0].status.readyReplicas > 0
   retries: 10
   delay: 20
-  failed_when: false
 ...

@@ -1,5 +1,4 @@
 ---
 rocket_namespace: rocket
-rocket_state: present
 rocket_app_name: rocket
 ...

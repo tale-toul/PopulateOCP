@@ -1,14 +1,15 @@
 ---
+# tasks file for rocket project
 - name: Create {{ rocket_namespace }} namespace
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     kind: Namespace
     name: "{{ rocket_namespace }}"
     state: "{{ rocket_state }}"
 - name: Create MongoDB Headless Service
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
@@ -29,8 +30,8 @@
         selector:
           name: "mongodb"
 - name: Create MongoDB regular Service
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
@@ -48,15 +49,15 @@
         selector:
           name: "mongodb"     
 - name: Create MongoDB StatefulSet
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
     definition: "{{ lookup('template', 'mongodb-ss.yml') }}"
 - name: Create Rocket Service
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
@@ -76,8 +77,8 @@
         selector:
           app: "{{ rocket_app_name }}" 
 - name: Create Rocket Image Stream 
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
@@ -97,14 +98,16 @@
             name: docker.io/rocketchat/rocket.chat:0.63.3
           name: 0.63.3
 - name: Create Rocket Deployment Config
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
     definition: "{{ lookup('template', 'rocket-dc.yml') }}"
 - name: Create Rocket entry Route
-  run_once: true
   k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: v1
     state: "{{ rocket_state }}"
     namespace: "{{ rocket_namespace }}"
     definition:
@@ -116,34 +119,34 @@
         to:
           kind: Service
           name: "{{ rocket_app_name }}"
+
+#Verify that deployments are successful
 - name: "Waiting for MongoDB StatefulSet to complete" 
-  run_once: true
-  oc_obj:
-    state: list
+  k8s_info:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     name: mongodb
     namespace: "{{ rocket_namespace }}"
-    kind: statefulset
+    kind: StatefulSet
+  when: rocket_state == "present"
   register: _dc_output
   until:
-    - _dc_output.module_results.results[0].status is defined
-    - _dc_output.module_results.results[0].status.readyReplicas is defined
-    - _dc_output.module_results.results[0].status.readyReplicas == _dc_output.module_results.results[0].spec.replicas
-  retries: 20
+    - _dc_output.resources[0].status is defined
+    - _dc_output.resources[0].status.readyReplicas is defined
+    - (_dc_output.resources[0].status.readyReplicas|int) == (_dc_output.resources[0].spec.replicas|int)
+  retries: 12
   delay: 30
-  failed_when: false
 - name: "Waiting for Rocket Deployment to complete" 
-  run_once: true
-  oc_obj:
-    state: list
+  k8s_info:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
     name: "{{ rocket_app_name }}"
     namespace: "{{ rocket_namespace }}"
-    kind: dc
+    kind: DeploymentConfig
+  when: rocket_state == "present"
   register: _dc_output
   until:
-    - _dc_output.module_results.results[0].status is defined
-    - _dc_output.module_results.results[0].status.readyReplicas is defined
-    - _dc_output.module_results.results[0].status.readyReplicas > 0
+    - _dc_output.resources[0].status is defined
+    - _dc_output.resources[0].status.readyReplicas is defined
+    - _dc_output.resources[0].status.readyReplicas > 0
   retries: 10
   delay: 20
-  failed_when: false
 ...

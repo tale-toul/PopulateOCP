@@ -10,7 +10,10 @@ $ oc rsh -n openshift-authentication <oauth-openshift-pod> cat /run/secrets/kube
 
 * For OCP 3
 
-To use the k8s ansible module family the python openshift client is required, this can be installed from EPEL repository (https://fedoraproject.org/wiki/EPEL). Additionally the server-extras and server-optinal repos must also be enabled:
+Get the following file from any master: /etc/origin/master/ca-bundle.crt
+
+
+To use the k8s ansible module family the python openshift client is required, this can be installed from EPEL repository (https://fedoraproject.org/wiki/EPEL). If using RHEL as ansible control host, additionally the server-extras and server-optinal repos must be enabled:
 
 ```
 # subscription-manager repos --enable rhel-7-server-optional-rpms --enable rhel-7-server-extras-rpms
