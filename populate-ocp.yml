@@ -16,6 +16,9 @@
       host: "{{ api_entrypoint }}"
       ca_cert: "{{ api_ca_cert }}"
   tasks:
+    - name: Load user credentials for OCP
+      include_vars: 
+        file: secret
     - name: Log in to obtain access token
       k8s_auth:
         username: "{{ ocp_user }}"
@@ -35,17 +38,17 @@
     - name: Deploy Cakephp with NO persistent storage
       include_role:
         name: cakephp
-#    - name: Deploy Image Uploader with persistent storage
-#      include_role:
-#        name: imageuploader
-#    - name: Deploy Todo application, including mongodb, postgresql, gogs, all with persistent storage
-#      include_role:
-#        name: todoapp
-#      # Minor version 11 is the highest in OCP 3 branch, for 3.11
-#      when: current_ocp_version|int <= 11 or todo_state == "absent"
-#    - name: Deploy rocket chat with mongodb stateful set and persistent storage
-#      include_role:
-#        name: rocket
+    - name: Deploy Image Uploader with persistent storage
+      include_role:
+        name: imageuploader
+    - name: Deploy Todo application, including mongodb, postgresql, gogs, all with persistent storage
+      include_role:
+        name: todoapp
+      # Minor version 11 is the highest in OCP 3 branch, for 3.11
+      when: current_ocp_version|int <= 11 or todo_state == "absent"
+    - name: Deploy rocket chat with mongodb stateful set and persistent storage
+      include_role:
+        name: rocket
     - name: Log out to revoke access token
       k8s_auth:
         state: absent

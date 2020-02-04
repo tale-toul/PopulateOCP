@@ -1,14 +1,5 @@
 ---
 # tasks file for todoapp
-- name: Fix random variables
-  set_fact:
-    mongodb_user: "{{ mongodb_user_definition }}"  
-    mongodb_password: "{{ mongodb_password_definition }}"
-    mongodb_admin_password: "{{ mongodb_admin_password_definition }}" 
-    github_trigger_secret: "{{ github_trigger_secret_definition }}"
-    generic_trigger_secret: "{{ generic_trigger_secret_definition }}"
-    gogs_postgresql_password: "{{ gogs_postgresql_password_definition }}"
-    gogs_password: "{{ gogs_password_definition }}"
 - name: Create {{ namespace }} namespace
   k8s:
     api_key: "{{ _auth_result.k8s_auth.api_key }}"
