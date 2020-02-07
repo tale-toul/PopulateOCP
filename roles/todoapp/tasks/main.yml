@@ -1,10 +1,10 @@
 ---
 # tasks file for todoapp
-- name: Create {{ namespace }} namespace
+- name: Create {{ namespace }} project
   k8s:
     api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
-    kind: Namespace
+    kind: Project
     name: "{{ namespace }}"
     state: "{{ todo_state }}"
 - name: Add edit role to default user in {{ namespace }}

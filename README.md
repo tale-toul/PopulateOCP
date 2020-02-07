@@ -65,7 +65,7 @@ Finally install the python openshift client package for python 2 or 3 version, t
 # yum install python2-openshift
 ```
 
-The calls to the OpenShift API are authenticated using an API key, this key is obtained at the beginning of the playbook and revoked at the end.  To obtain the api key a valid user and password are required by the playbook, the credentials are expected to be found in a file called **secret** in the same directory where the populate-ocp.yml playbook is:
+The calls to the OpenShift API are authenticated using an API key, this key is obtained at the beginning of the playbook and revoked at the end.  To obtain the api key a valid user and password with access to the OCP cluster are required by the playbook, no special permissions are required.  The credentials are expected to be found in a file called **secret** in the same directory where the populate-ocp.yml playbook is:
 
 ```
 ocp_user: <username>
@@ -75,6 +75,12 @@ This file can be encrypted with **ansible-vault**:
 
 ```
 $ ansible-vault encrypt secret
+```
+
+Finally run the playbook, in the exampel a file with the encryption keys is passed via the `--vault-id` parameter:
+
+```
+$ ansible-playbook populate-ocp.yml --vault-id key.txt
 ```
 
 ## Security considerations

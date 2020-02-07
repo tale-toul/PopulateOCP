@@ -1,10 +1,10 @@
 ---
 # tasks file for rocket project
-- name: Create {{ rocket_namespace }} namespace
+- name: Create {{ rocket_namespace }} project
   k8s:
     api_key: "{{ _auth_result.k8s_auth.api_key }}"
     api_version: v1
-    kind: Namespace
+    kind: Project
     name: "{{ rocket_namespace }}"
     state: "{{ rocket_state }}"
 - name: Create MongoDB Headless Service

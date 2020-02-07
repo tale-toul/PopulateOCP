@@ -10,7 +10,7 @@
 #    api_ca_cert: "ingress-ca.crt"
 #    api_entrypoint: "https://api.tale.ocpext.rhcee.support:6443"
     api_ca_cert: "ca-bundle.crt"
-    api_entrypoint: "https://master.ocpext.rhcee.support:443"
+    api_entrypoint: "https://master.azaleaext.rhcee.support:443"
   module_defaults:
     group/k8s:
       host: "{{ api_entrypoint }}"
