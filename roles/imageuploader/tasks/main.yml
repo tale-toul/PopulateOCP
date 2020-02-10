@@ -10,109 +10,112 @@
     kind: Project
     name: "{{ namespace }}"
     state: "{{ imageuploader_state }}"
-- name: Create Service 
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Service
-      metadata:
-        annotations:
-          description: Exposes the database server
-        labels:
-          app: "{{ imageuploader_app_name }}"
-        name: "{{ imageuploader_app_name }}"
-      spec:
-        ports:
-        - name: 8080-tcp
-          port: 8080
-          protocol: TCP
-          targetPort: 8080
-        - name: 8443-tcp
-          port: 8443
-          protocol: TCP
-          targetPort: 8443
-        selector:
-          app: "{{ imageuploader_app_name }}"
-          deploymentconfig: "{{ imageuploader_app_name }}"
-- name: Create {{ namespace }} PVC
-  k8s: 
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: "{{ imageuploader_app_name }}"
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 2Gi 
-- name: Create Image Uploader DeploymentConfig
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('template', 'imageuploader-dc.yml') }}"
-- name: Create Image Uploader Image stream 
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: ImageStream
-      metadata:
-        annotations:
-          description: Keeps track of changes in the application image
-        name: "{{ imageuploader_app_name }}"
-- name: Create  Image Uploader Buildconfig
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('template', 'imageuploader-bc.yml') }}"
-- name: Create Image Uploader entry Route
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ imageuploader_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Route
-      metadata:
-        name: "{{ imageuploader_app_name }}"
-      spec:
-        port:
-          targetPort: 8080-tcp
-        to:
+  register: _project_creation
+  failed_when: _project_creation.failed == true and not (imageuploader_state == "absent" and _project_creation.status == 403)
+- when: imageuploader_state == "present"
+  block:
+    - name: Create Service 
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
           kind: Service
-          name: "{{ imageuploader_app_name }}"
-
-#Verify that deployments are successful
-- name: "Waiting for Image Uploader Deployment to complete" 
-  k8s_info:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    name: "{{ imageuploader_app_name }}"
-    namespace: "{{ namespace }}"
-    kind: DeploymentConfig
-  when: imageuploader_state == "present"
-  register: _dc_output
-  until:
-    - _dc_output.resources[0].status is defined
-    - _dc_output.resources[0].status.readyReplicas is defined
-    - _dc_output.resources[0].status.readyReplicas > 0
-  retries: 10
-  delay: 20
+          metadata:
+            annotations:
+              description: Exposes the database server
+            labels:
+              app: "{{ imageuploader_app_name }}"
+            name: "{{ imageuploader_app_name }}"
+          spec:
+            ports:
+            - name: 8080-tcp
+              port: 8080
+              protocol: TCP
+              targetPort: 8080
+            - name: 8443-tcp
+              port: 8443
+              protocol: TCP
+              targetPort: 8443
+            selector:
+              app: "{{ imageuploader_app_name }}"
+              deploymentconfig: "{{ imageuploader_app_name }}"
+    - name: Create {{ namespace }} PVC
+      k8s: 
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: "{{ imageuploader_app_name }}"
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi 
+    - name: Create Image Uploader DeploymentConfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'imageuploader-dc.yml') }}"
+    - name: Create Image Uploader Image stream 
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ imageuploader_app_name }}"
+    - name: Create  Image Uploader Buildconfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'imageuploader-bc.yml') }}"
+    - name: Create Image Uploader entry Route
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ imageuploader_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ imageuploader_app_name }}"
+          spec:
+            port:
+              targetPort: 8080-tcp
+            to:
+              kind: Service
+              name: "{{ imageuploader_app_name }}"
+    
+    #Verify that deployments are successful
+    - name: "Waiting for Image Uploader Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        name: "{{ imageuploader_app_name }}"
+        namespace: "{{ namespace }}"
+        kind: DeploymentConfig
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 10
+      delay: 20
 ...

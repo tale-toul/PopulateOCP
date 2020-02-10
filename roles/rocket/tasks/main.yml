@@ -7,146 +7,148 @@
     kind: Project
     name: "{{ rocket_namespace }}"
     state: "{{ rocket_state }}"
-- name: Create MongoDB Headless Service
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition:
-      kind: Service
-      apiVersion: v1
-      metadata:
-        name: "mongodb-internal"
-        labels:
-          name: "mongodb"
-        annotations:
-          service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-      spec:
-        clusterIP: None
-        ports:
-          - name: mongodb
-            port: 27017
-        selector:
-          name: "mongodb"
-- name: Create MongoDB regular Service
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition:
-      kind: Service
-      apiVersion: v1
-      metadata:
-        name: "mongodb"
-        labels:
-          name: "mongodb"
-      spec:
-        ports:
-          - name: mongodb
-            port: 27017
-        selector:
-          name: "mongodb"     
-- name: Create MongoDB StatefulSet
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition: "{{ lookup('template', 'mongodb-ss.yml') }}"
-- name: Create Rocket Service
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition:
-      kind: Service
-      apiVersion: v1
-      metadata:
-        annotations:
-          description: Exposes and load balances the application pods
-        name: "{{ rocket_app_name }}"
-      spec:
-        ports:
-          - name: 3000-tcp
-            port: 3000
-            protocol: TCP
-            targetPort: 3000
-        selector:
-          app: "{{ rocket_app_name }}" 
-- name: Create Rocket Image Stream 
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition:
-      apiVersion: v1
-      kind: ImageStream
-      metadata:
-        annotations:
-          description: Keeps track of changes in the application image
-        name: "{{ rocket_app_name }}"
-      spec:
-        tags:
-        - annotations:
-            openshift.io/imported-from: docker.io/rocketchat/rocket.chat:0.63.3
-          from:
-            kind: DockerImage
-            name: docker.io/rocketchat/rocket.chat:0.63.3
-          name: 0.63.3
-- name: Create Rocket Deployment Config
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition: "{{ lookup('template', 'rocket-dc.yml') }}"
-- name: Create Rocket entry Route
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ rocket_state }}"
-    namespace: "{{ rocket_namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Route
-      metadata:
-        name: "{{ rocket_app_name }}"
-      spec:
-        to:
+  register: _project_creation
+  failed_when: _project_creation.failed == true and not (rocket_state == "absent" and _project_creation.status == 403)
+- when: rocket_state == "present"
+  block:
+    - name: Create MongoDB Headless Service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition:
           kind: Service
-          name: "{{ rocket_app_name }}"
-
-#Verify that deployments are successful
-- name: "Waiting for MongoDB StatefulSet to complete" 
-  k8s_info:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    name: mongodb
-    namespace: "{{ rocket_namespace }}"
-    kind: StatefulSet
-  when: rocket_state == "present"
-  register: _dc_output
-  until:
-    - _dc_output.resources[0].status is defined
-    - _dc_output.resources[0].status.readyReplicas is defined
-    - (_dc_output.resources[0].status.readyReplicas|int) == (_dc_output.resources[0].spec.replicas|int)
-  retries: 12
-  delay: 30
-- name: "Waiting for Rocket Deployment to complete" 
-  k8s_info:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    name: "{{ rocket_app_name }}"
-    namespace: "{{ rocket_namespace }}"
-    kind: DeploymentConfig
-  when: rocket_state == "present"
-  register: _dc_output
-  until:
-    - _dc_output.resources[0].status is defined
-    - _dc_output.resources[0].status.readyReplicas is defined
-    - _dc_output.resources[0].status.readyReplicas > 0
-  retries: 10
-  delay: 20
+          apiVersion: v1
+          metadata:
+            name: "mongodb-internal"
+            labels:
+              name: "mongodb"
+            annotations:
+              service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+          spec:
+            clusterIP: None
+            ports:
+              - name: mongodb
+                port: 27017
+            selector:
+              name: "mongodb"
+    - name: Create MongoDB regular Service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition:
+          kind: Service
+          apiVersion: v1
+          metadata:
+            name: "mongodb"
+            labels:
+              name: "mongodb"
+          spec:
+            ports:
+              - name: mongodb
+                port: 27017
+            selector:
+              name: "mongodb"     
+    - name: Create MongoDB StatefulSet
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition: "{{ lookup('template', 'mongodb-ss.yml') }}"
+    - name: Create Rocket Service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition:
+          kind: Service
+          apiVersion: v1
+          metadata:
+            annotations:
+              description: Exposes and load balances the application pods
+            name: "{{ rocket_app_name }}"
+          spec:
+            ports:
+              - name: 3000-tcp
+                port: 3000
+                protocol: TCP
+                targetPort: 3000
+            selector:
+              app: "{{ rocket_app_name }}" 
+    - name: Create Rocket Image Stream 
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ rocket_app_name }}"
+          spec:
+            tags:
+            - annotations:
+                openshift.io/imported-from: docker.io/rocketchat/rocket.chat:0.63.3
+              from:
+                kind: DockerImage
+                name: docker.io/rocketchat/rocket.chat:0.63.3
+              name: 0.63.3
+    - name: Create Rocket Deployment Config
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition: "{{ lookup('template', 'rocket-dc.yml') }}"
+    - name: Create Rocket entry Route
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ rocket_state }}"
+        namespace: "{{ rocket_namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ rocket_app_name }}"
+          spec:
+            to:
+              kind: Service
+              name: "{{ rocket_app_name }}"
+    
+    #Verify that deployments are successful
+    - name: "Waiting for MongoDB StatefulSet to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        name: mongodb
+        namespace: "{{ rocket_namespace }}"
+        kind: StatefulSet
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - (_dc_output.resources[0].status.readyReplicas|int) == (_dc_output.resources[0].spec.replicas|int)
+      retries: 12
+      delay: 30
+    - name: "Waiting for Rocket Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        name: "{{ rocket_app_name }}"
+        namespace: "{{ rocket_namespace }}"
+        kind: DeploymentConfig
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 10
+      delay: 20
 ...

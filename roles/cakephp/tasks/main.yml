@@ -6,140 +6,142 @@
     kind: Project
     name: "{{ namespace }}"
     state: "{{ cakephp_state }}"
-- name: Create Secret
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: "{{ secret_name }}"
-      stringData:
-        cakephp-secret-token: "{{ cakephp_secret_token }}"
-        cakephp-security-salt: "{{ cakephp_security_salt }}"
-        database-password: "{{ database_password }}"
-        database-user: "{{ database_user }}"
-- name: Create Database Service 
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Service
-      metadata:
-        annotations:
-          description: Exposes the database server
-        name: "{{ database_service_name }}"
-      spec:
-        ports:
-        - name: mysql
-          port: 3306
-          targetPort: 3306
-        selector:
-          name: "{{ database_service_name }}"
-- name: Create Mysql DeploymentConfig
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('template', 'mysql-dc.yml') }}"
-- name: Create CakePhP service
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Service
-      metadata:
-        annotations:
-          description: Exposes and load balances the application pods
-        name: "{{ cakephp_app_name }}"
-      spec:
-        ports:
-        - name: web
-          port: 8080
-          targetPort: 8080
-        selector:
-          name: "{{ cakephp_app_name }}" 
-- name: Create cakephp Image stream 
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: ImageStream
-      metadata:
-        annotations:
-          description: Keeps track of changes in the application image
-        name: "{{ cakephp_app_name }}"
-- name: Create cakephp Buildconfig
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('template', 'cakephp-buildconfig.yml') }}"
-- name: Create Cakephp Deployment config
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('template', 'cakephp-dc.yml') }}"
-- name: Create Cakephp entry Route
-  k8s:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    state: "{{ cakephp_state }}"
-    namespace: "{{ namespace }}"
-    definition:
-      apiVersion: v1
-      kind: Route
-      metadata:
-        name: "{{ cakephp_app_name }}"
-      spec:
-        to:
+  register: _project_creation
+  failed_when: _project_creation.failed == true and not (cakephp_state == "absent" and _project_creation.status == 403)
+- when: cakephp_state == "present"
+  block:
+    - name: Create Secret
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ secret_name }}"
+          stringData:
+            cakephp-secret-token: "{{ cakephp_secret_token }}"
+            cakephp-security-salt: "{{ cakephp_security_salt }}"
+            database-password: "{{ database_password }}"
+            database-user: "{{ database_user }}"
+    - name: Create Database Service 
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
           kind: Service
-          name: "{{ cakephp_app_name }}"
-
-# Verify Deployments
-- name: "Waiting for Mysql Deployment to complete" 
-  k8s_info:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    api_version: v1
-    kind: DeploymentConfig
-    name: "{{ database_service_name }}"
-    namespace: "{{ namespace }}"
-  when: cakephp_state == "present"
-  register: _dc_output
-  until:
-    - _dc_output.resources[0].status is defined
-    - _dc_output.resources[0].status.readyReplicas is defined
-    - _dc_output.resources[0].status.readyReplicas > 0
-  retries: 10
-  delay: 20
-- name: "Waiting for CakePhP Deployment to complete" 
-  k8s_info:
-    api_key: "{{ _auth_result.k8s_auth.api_key }}"
-    name: "{{ cakephp_app_name }}"
-    namespace: "{{ namespace }}"
-    kind: DeploymentConfig
-  when: cakephp_state == "present"
-  register: _dc_output
-  until:
-    - _dc_output.resources[0].status is defined
-    - _dc_output.resources[0].status.readyReplicas is defined
-    - _dc_output.resources[0].status.readyReplicas > 0
-  retries: 10
-  delay: 30
+          metadata:
+            annotations:
+              description: Exposes the database server
+            name: "{{ database_service_name }}"
+          spec:
+            ports:
+            - name: mysql
+              port: 3306
+              targetPort: 3306
+            selector:
+              name: "{{ database_service_name }}"
+    - name: Create Mysql DeploymentConfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'mysql-dc.yml') }}"
+    - name: Create CakePhP service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+              description: Exposes and load balances the application pods
+            name: "{{ cakephp_app_name }}"
+          spec:
+            ports:
+            - name: web
+              port: 8080
+              targetPort: 8080
+            selector:
+              name: "{{ cakephp_app_name }}" 
+    - name: Create cakephp Image stream 
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ cakephp_app_name }}"
+    - name: Create cakephp Buildconfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'cakephp-buildconfig.yml') }}"
+    - name: Create Cakephp Deployment config
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('template', 'cakephp-dc.yml') }}"
+    - name: Create Cakephp entry Route
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ cakephp_app_name }}"
+          spec:
+            to:
+              kind: Service
+              name: "{{ cakephp_app_name }}"
+    
+    # Verify Deployments
+    - name: "Waiting for Mysql Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        kind: DeploymentConfig
+        name: "{{ database_service_name }}"
+        namespace: "{{ namespace }}"
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 10
+      delay: 20
+    - name: "Waiting for CakePhP Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        name: "{{ cakephp_app_name }}"
+        namespace: "{{ namespace }}"
+        kind: DeploymentConfig
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 10
+      delay: 30
 ...
