@@ -7,10 +7,8 @@
     imageuploader_state: "present"
     rocket_state: "present"
     todo_state: "present"
-#    api_ca_cert: "ingress-ca.crt"
-#    api_entrypoint: "https://api.tale.ocpext.rhcee.support:6443"
-    api_ca_cert: "ca-bundle.crt"
-    api_entrypoint: "https://master.azaleaext.rhcee.support:443"
+    api_ca_cert: "ingress-ca.crt"
+    api_entrypoint: "https://api.juck.tale.rhcee.support:6443"
   module_defaults:
     group/k8s:
       host: "{{ api_entrypoint }}"
@@ -35,6 +33,9 @@
       register: _version
     - set_fact:
         current_ocp_version: "{{ _version.json.minor|regex_replace('(..).*$','\\1') }}"
+    #Next needs to be a separate task because it depends on the preivous variable current_ocp_version
+    - set_fact:
+        project_api_version: "{% if current_ocp_version|int <= 11 %}v1{% else %}project.openshift.io/v1{% endif %}"
     - name: Deploy Cakephp with NO persistent storage
       include_role:
         name: cakephp
