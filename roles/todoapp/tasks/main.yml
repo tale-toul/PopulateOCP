@@ -348,8 +348,8 @@
         - _dc_output.resources[0].status is defined
         - _dc_output.resources[0].status.readyReplicas is defined
         - _dc_output.resources[0].status.readyReplicas > 0
-      retries: 10
-      delay: 20
+      retries: 14
+      delay: 15
     - name: "Waiting for PostGreSQL Deployment to complete" 
       k8s_info:
         api_key: "{{ _auth_result.k8s_auth.api_key }}"
@@ -362,8 +362,8 @@
         - _dc_output.resources[0].status is defined
         - _dc_output.resources[0].status.readyReplicas is defined
         - _dc_output.resources[0].status.readyReplicas > 0
-      retries: 10
-      delay: 20
+      retries: 14
+      delay: 15
     - name: "Waiting for Gogs Deployment to complete" 
       k8s_info:
         api_key: "{{ _auth_result.k8s_auth.api_key }}"
@@ -376,8 +376,8 @@
         - _dc_output.resources[0].status is defined
         - _dc_output.resources[0].status.readyReplicas is defined
         - _dc_output.resources[0].status.readyReplicas > 0
-      retries: 10
-      delay: 20
+      retries: 14
+      delay: 15
     - name: "Waiting for ToDoApp Deployment to complete" 
       k8s_info:
         api_key: "{{ _auth_result.k8s_auth.api_key }}"
@@ -390,6 +390,6 @@
         - _dc_output.resources[0].status is defined
         - _dc_output.resources[0].status.readyReplicas is defined
         - _dc_output.resources[0].status.readyReplicas > 0
-      retries: 20
-      delay: 30
+      retries: 40
+      delay: 15
 ...

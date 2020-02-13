@@ -116,6 +116,6 @@
         - _dc_output.resources[0].status is defined
         - _dc_output.resources[0].status.readyReplicas is defined
         - _dc_output.resources[0].status.readyReplicas > 0
-      retries: 10
-      delay: 20
+      retries: 14
+      delay: 15
 ...
