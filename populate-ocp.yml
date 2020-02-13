@@ -32,12 +32,12 @@
           Accept: application/json, */*
       register: _version
     - name: Define var current_ocp_version
-        set_fact:
-          current_ocp_version: "{{ _version.json.minor|regex_replace('(..).*$','\\1') }}"
+      set_fact:
+        current_ocp_version: "{{ _version.json.minor|regex_replace('(..).*$','\\1') }}"
     #Next needs to be a separate task because it depends on the preivous variable current_ocp_version
     - name: Define API entry point for project request according to OCP version
-        set_fact:
-          project_api_version: "{% if current_ocp_version|int <= 11 %}v1{% else %}project.openshift.io/v1{% endif %}"
+      set_fact:
+        project_api_version: "{% if current_ocp_version|int <= 11 %}v1{% else %}project.openshift.io/v1{% endif %}"
     - name: Deploy Cakephp with NO persistent storage
       include_role:
         name: cakephp
