@@ -16,7 +16,7 @@ The projects created by the playbook are:  cakephp; imageuploader; rocket; todoa
 
 ## Deploy projects
 
-This playbook does not require an inventory file since all taks are run on localhost, however the k8s modules use the parameter **host** to specify the OpenShift cluster API entry point, this API URL can be obtained running the following command from an already logged in session with the OCP cluster:
+This playbook does not require an inventory file since all taks are run on localhost, the ansible _k8s_ modules use the parameter **host** to specify the OpenShift cluster API entry point, this API URL can be obtained running the following command from an already logged in session with the OCP cluster:
 
 ```
 $ oc whoami --show-server
@@ -49,7 +49,13 @@ Assign the name of the file to the variable **api_ca_cert** in the **vars** sect
 To use the k8s ansible module family the _python openshift client_ is required to be installed in the control host, this can be installed from [EPEL repository](https://fedoraproject.org/wiki/EPEL). If the ansible control host is using RHEL, additionally the server-extras and server-optinal repos must be enabled:
 
 ```
- # subscription-manager repos --enable rhel-7-server-optional-rpms --enable rhel-7-server-extras-rpms
+ # subscription-manager repos --enable rhel-7-server-optional-rpms --enable rhel-7-server-extras-rpms --enable rhel-7-server-ansible-2.9-rpms
+```
+
+Install ansible 2.9:
+
+```shell
+ # yum install ansible 
 ```
 
 Check the python version that ansible uses:
@@ -67,7 +73,7 @@ Finally install the python openshift client package for python 2 or 3 version, t
  # yum install python2-openshift
 ```
 
-The calls to the OpenShift API are authenticated using an API key, this key is obtained at the beginning of the playbook and revoked at the end.  To obtain the api key a valid user and password with access to the OCP cluster are required by the playbook, no special permissions are required.  The credentials are expected to be found in a file called **secret** in the same directory where the populate-ocp.yml playbook is:
+The calls to the OCP cluster API are authenticated using an API key, this key is obtained at the beginning of the playbook and revoked at the end.  To obtain the api key, a valid user with access to the OCP cluster is required, no special permissions are required for this user.  The credentials are expected to be found in a file called **secret** in the same directory where the populate-ocp.yml playbook is:
 
 ```
 ocp_user: <username>
