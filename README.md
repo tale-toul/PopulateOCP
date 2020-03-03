@@ -46,9 +46,17 @@ Assign the name of the file to the variable **api_ca_cert** in the **vars** sect
     api_ca_cert: "ca-bundle.crt"
 ```
 
-To use the k8s ansible module family the _python openshift client_ is required to be installed in the control host, this can be installed from [EPEL repository](https://fedoraproject.org/wiki/EPEL). If the ansible control host is using RHEL, additionally the server-extras and server-optinal repos must be enabled:
+To use the k8s ansible module family the _python openshift client_ is required to be installed in the control host, this can be installed from [EPEL repository](https://fedoraproject.org/wiki/EPEL).
+ 
+Add the EPEL repo for your release as explained in the [EPEL site](https://fedoraproject.org/wiki/EPEL)
 
+```shell
+ # yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 ```
+
+If the ansible control host is using RHEL, the server-extras and server-optinal repos must be enabled:
+
+```shell
  # subscription-manager repos --enable rhel-7-server-optional-rpms --enable rhel-7-server-extras-rpms --enable rhel-7-server-ansible-2.9-rpms
 ```
 
