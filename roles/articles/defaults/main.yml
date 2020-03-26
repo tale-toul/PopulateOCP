@@ -1,0 +1,22 @@
+---
+# defaults file for articles
+name: "articles"
+application_password: "secret"
+application_user: "openshift"
+database_password: "d943ald9q" 
+database_user: "articlesdbuser" 
+secret_key_base: "ds43291aldv9" 
+database_service_name: "postgresql" 
+source_repository_url: "https://github.com/sclorg/rails-ex.git" 
+github_webhook_secret: "j130q043lR" 
+database_name: "root" 
+postgresql_max_connections: "100" 
+postgresql_shared_buffers: "12MB"
+memory_postgresql_limit: "512Mi" 
+rails_env: "production"
+memory_limit: "512Mi" 
+#Leaving the storage class value empty will take the default storage class
+storage_class: "" 
+volume_capacity: "1Gi" 
+baseImages_namespace: openshift 
+...

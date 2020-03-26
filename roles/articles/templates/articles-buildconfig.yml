@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  annotations:
+    description: Defines how to build the application
+  name: "{{ name }}"
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "{{ name }}:latest"
+  postCommit:
+    script: bundle exec rake test
+  source:
+    git:
+      uri: "{{ source_repository_url }}"
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: "ruby:2.5"
+        namespace: "{{ baseImages_namespace }}"
+    type: Source
+  triggers:
+  - type: ImageChange
+  - type: ConfigChange
+  - github:
+      secret: "{{ github_webhook_secret }}"
+    type: GitHub
+...

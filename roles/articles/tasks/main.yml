@@ -1,0 +1,159 @@
+---
+- name: Create {{ name }} project
+  k8s:
+    api_key: "{{ _auth_result.k8s_auth.api_key }}"
+    api_version: "{{ project_api_version }}"
+    kind: Project
+    name: "{{ name }}"
+    state: "{{ articles_state }}"
+  register: _project_creation
+  failed_when: _project_creation.failed == true and not (articles_state == "absent" and _project_creation.status == 403)
+
+- when: articles_state == "present"
+  block:
+    - name: Create {{ name }} secret
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ name }}"
+          stringData:
+            application-password: "{{ application_password }}"
+            application-user: "{{ application_user }}"
+            database-password: "{{ database_password }}"
+            database-user: "{{ database_user }}"
+            keybase: "{{ secret_key_base }}"
+    - name: Create application service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+              description: Exposes and load balances the application pods
+            name: "{{ name }}"
+          spec:
+            ports:
+            - name: web
+              port: 8080
+              targetPort: 8080
+            selector:
+              name: "{{ name }}"
+#To access the articles application, you must add /articles at the end of the route
+    - name: Create {{ name }} entry Route
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition:
+          apiVersion: v1
+          kind: Route
+          metadata:
+            name: "{{ name }}"
+          spec:
+            to:
+              kind: Service
+              name: "{{ name }}"
+    - name: Create {{ name }} ImageStream
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition:
+          apiVersion: v1
+          kind: ImageStream
+          metadata:
+            annotations:
+              description: Keeps track of changes in the application image
+            name: "{{ name }}"
+    - name: Create {{ name }} BuildConfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition: "{{ lookup('template', 'articles-buildconfig.yml') }}"
+    - name: Create {{ name }} DeploymentConfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition: "{{ lookup('template', 'articles-dc.yml') }}"
+    - name: Create database PVC
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition: "{{ lookup('template', 'articles-pvc.yml') }}"
+    - name: Create database service
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            annotations:
+               description: Exposes the database server
+            name: "{{ database_service_name }}"
+          spec:
+            ports:
+            - name: postgresql
+              port: 5432
+              targetPort: 5432
+            selector:
+              name: "{{ database_service_name }}"
+    - name: Create database DeploymentConfig
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ articles_state }}"
+        namespace: "{{ name }}"
+        definition: "{{ lookup('template', 'database-dc.yml') }}"
+
+# Verify Deployments
+    - name: "Waiting for Postgresql Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        kind: DeploymentConfig
+        name: "{{ database_service_name }}"
+        namespace: "{{ name }}"
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 14
+      delay: 15
+    - name: "Waiting for Articles app Deployment to complete" 
+      k8s_info:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        kind: DeploymentConfig
+        name: "{{ name }}"
+        namespace: "{{ name }}"
+      register: _dc_output
+      until:
+        - _dc_output.resources[0].status is defined
+        - _dc_output.resources[0].status.readyReplicas is defined
+        - _dc_output.resources[0].status.readyReplicas > 0
+      retries: 14
+      delay: 15
+
+...

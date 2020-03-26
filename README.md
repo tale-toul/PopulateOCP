@@ -14,7 +14,7 @@ The projects created by the playbook are:  cakephp; imageuploader; rocket; todoa
 
 # How to use the playbook
 
-## Deploy projects
+## Deploy applications
 
 This playbook does not require an inventory file since all taks are run on localhost, the ansible _k8s_ modules use the parameter **host** to specify the OpenShift cluster API entry point, this API URL can be obtained running the following command from an already logged in session with the OCP cluster:
 
@@ -85,6 +85,8 @@ This file can be encrypted with **ansible-vault**:
 $ ansible-vault encrypt secret
 ```
 
+Each application has a set of variables that can be modified to change some configuration parameters, the variables are defined in **roles/[app name]/defaults/main.yml**
+
 Finally run the playbook, in the exampel a file with the encryption keys is passed via the `--vault-id` parameter:
 
 ```
@@ -93,27 +95,26 @@ $ ansible-playbook populate-ocp.yml --vault-id key.txt
 
 ## Remove projects
 
-The playbook can also be used to remove all or some of the projects prevously deployed.  This behavior is controlled by a group of variables, one for each project, defined in the **vars** section at the beginning of the populate-ocp.yml playbook.  
+The playbook can also be used to remove all or some of the projects prevously deployed.  This behavior is controlled by a group of variables: a global one and one for each project, defined in the **vars** section at the beginning of the populate-ocp.yml playbook.  
 
-The default value of all these variables is **present** which causes the projects and its components to be created, changing any of the variables to **absent** will cause that particular project and all its resources to be removed:
+The global variable **remove_all_apps** controls whether all applications will be removed or not, it is _false_ by default.   The individual variables control whether each application will be installed or not, by default they all have a value of _present_ so the default behavior of the playbook is to install all applications.  The value of **remove_all_apps** has precedence over the application individual variables.
 
-```
-  vars:
-    cakephp_state: "present"
-    imageuploader_state: "present"
-    rocket_state: "present"
-    todo_state: "present"
-```
+For example:
 
-For example to remove the cakephp and todoapp projects use the following command:
+* To remove the cakephp and todoapp projects use the following command:
 
-```
+```shell
 $ ansible-playbook populate-ocp.yml -e cakephp_state=absent -e todo_state=absent --vault-id key.txt
+```
+* To remove all applications use:
+
+```shell
+$ ansible-playbook populate-ocp.yml -e remove_all_apps=true --vault-id key.txt
 ```
 
 ## Security considerations
 
-Given that this are test cases not meant for production systems, security is weak. 
+Given that this are test cases are not meant for production systems, security is weak. 
 
 * The passwords defined for the cakephp applications are defined in the clear: database_password; cakephp_secret_token; cakephp_security_salt; github_webhook_secret.  They should be defined in a "_vaulted_" file.
 

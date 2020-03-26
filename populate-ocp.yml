@@ -7,13 +7,23 @@
     imageuploader_state: "present"
     rocket_state: "present"
     todo_state: "present"
-    api_entrypoint: "https://api.radka.tale.rhcee.support:6443"
+    articles_state: "present"
+    remove_all_apps: false
+    api_entrypoint: "https://api.cluster-ocs-1692.ocs-1692.example.opentlc.com:6443"
     api_ca_cert: "ingress-ca.crt"
   module_defaults:
     group/k8s:
       host: "{{ api_entrypoint }}"
       ca_cert: "{{ api_ca_cert }}"
   tasks:
+    - name: Define if all applications are being unisntalled
+      set_fact:
+        cakephp_state: "absent"
+        imageuploader_state: "absent"
+        rocket_state: "absent"
+        todo_state: "absent"
+        articles_state: "absent"
+      when: remove_all_apps
     - name: Load user credentials for OCP
       include_vars: 
         file: secret
@@ -52,6 +62,9 @@
     - name: Deploy rocket chat with mongodb stateful set and persistent storage
       include_role:
         name: rocket
+    - name: Deploy articles app
+      include_role:
+        name: articles
     - name: Log out to revoke access token
       k8s_auth:
         state: absent
