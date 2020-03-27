@@ -52,7 +52,7 @@ spec:
       spec:
         accessModes: 
           - ReadWriteOnce 
-{% if rocket_storage_class != "" %}
+{% if rocket_storage_class is defined and rocket_storage_class != "" %}
         storageClassName: "{{ rocket_storage_class }}"
 {% endif %}
         resources:

@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-{% if gogs_storage_class != "" %}
+{% if gogs_storage_class is defined and gogs_storage_class != "" %}
   storageClassName: "{{ gogs_storage_class }}"
 {% endif %}
   resources:

@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-{% if imageuploader_storage_class != "" %}
+{% if imageuploader_storage_class is defined and imageuploader_storage_class != "" %}
   storageClassName: "{{ imageuploader_storage_class }}"
 {% endif %}
   resources:

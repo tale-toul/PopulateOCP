@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-{% if postgre_gogs_storage_class != "" %}
+{% if postgre_gogs_storage_class is defined and postgre_gogs_storage_class != "" %}
   storageClassName: "{{ postgre_gogs_storage_class }}"
 {% endif %}
   resources:

@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-{% if articles_storage_class != "" %}
+{% if articles_storage_class is defined and articles_storage_class != "" %}
   storageClassName: "{{ articles_storage_class }}"
 {% endif %}
   resources:
