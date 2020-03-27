@@ -1,4 +1,5 @@
 ---
 rocket_namespace: rocket
 rocket_app_name: rocket
+rocket_storage_class: ""
 ...

@@ -62,7 +62,7 @@
     - name: Deploy rocket chat with mongodb stateful set and persistent storage
       include_role:
         name: rocket
-    - name: Deploy articles app
+    - name: Deploy articles app with persistent storage
       include_role:
         name: articles
     - name: Log out to revoke access token

@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ mongodb_application_name }}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+{% if mongodb_storage_class != "" %}
+  storageClassName: "{{ mongodb_storage_class }}"
+{% endif %}
+  resources:
+    requests:
+      storage: 2Gi 
+...

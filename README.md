@@ -4,7 +4,7 @@ This playbook and collection of roles will deploy a set of applications to an Op
 
 The playbook is compatible with OCP 3 and 4 versions, although some of the applications may not be, so the playbook itself will decice if the particular application must be deployed or not depending on the version of OpenShift. 
 
-Some of the applications will use persistent storage by creating PVCs, so the cluster is expected to have a default storage class defined.
+Some of the applications will use persistent storage by creating PVCs, so the cluster is expected to have at least a default storage class defined.
 
 The roles try to be idempotent, so additional executions of the playbook will not modify the resources that have not been changed.
 
@@ -163,3 +163,41 @@ Once the Kubernetes and Openshift versions are known, this information can be us
 ```
 
 Later the variable is used during project creation: `api_version: "{{ project_api_version }}"`
+
+## Storage class definition
+
+Most of the applications deployed by this playbook require persistent storage, so PVCs are created from template definitions.  The **storageClassName** parameter is taken from an ansible variable, if that variable has a value the parameter is defined in the template, if the variable is empty the parameter is not added to the definition so the default storage class is used.  All PVCs from each application has its own variable so each PVC can use a different storage class:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ database_service_name }}"
+spec:
+  accessModes:
+  - ReadWriteOnce
+{% if articles_storage_class != "" %}
+  storageClassName: "{{ articles_storage_class }}"
+{% endif %}
+  resources:
+    requests:
+      storage: "{{ volume_capacity }}"
+```
+
+The mongodb stateful set also uses a template and a storage claim, which is not a PVC, but a similar construction.  To avoid issues with whitespacing the jinja2 contructions must start at column 0:
+
+```yaml
+...
+       labels:
+           name: "mongodb"
+       spec:
+        accessModes: 
+          - ReadWriteOnce 
+{% if rocket_storage_class != "" %}
+        storageClassName: "{{ rocket_storage_class }}"
+{% endif %}
+         resources:
+           requests:
+             storage: "4Gi"
+...
+```

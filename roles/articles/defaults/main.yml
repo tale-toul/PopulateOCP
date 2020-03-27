@@ -16,7 +16,7 @@ memory_postgresql_limit: "512Mi"
 rails_env: "production"
 memory_limit: "512Mi" 
 #Leaving the storage class value empty will take the default storage class
-storage_class: "" 
+articles_storage_class: "" 
 volume_capacity: "1Gi" 
 baseImages_namespace: openshift 
 ...

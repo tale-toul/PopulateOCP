@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gogs
+spec:
+  accessModes:
+    - ReadWriteOnce
+{% if gogs_storage_class != "" %}
+  storageClassName: "{{ gogs_storage_class }}"
+{% endif %}
+  resources:
+    requests:
+      storage: 2Gi 
+...

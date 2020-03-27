@@ -6,10 +6,12 @@ mongodb_application_name: mongodb
 mongodb_user: "amancay"  
 mongodb_password: "r3safdlj"
 mongodb_admin_password: "iql3ed9" 
+mongodb_storage_class: ""
 github_trigger_secret: "adsfo324ldsafoa"
 generic_trigger_secret: "aadslea9q354"
 gogs_postgresql_password: "i4332f9d9ll32"
 gogs_password: "aragosano"
+gogs_storage_class: ""
 #Examples on how to cresate a random password.
 #mongodb_user_definition: "{{ lookup('password', '/dev/null length=8 chars=ascii_letters') }}"
 #mongodb_password_definition: "{{ lookup('password', '/dev/null length=8 chars=ascii_letters') }}"
@@ -25,4 +27,5 @@ context_dir: openshift-cicd-flask-mongo
 git_ref: master
 git_uri: https://github.com/OpenShiftInAction/chapter6
 gogs_version: "0.11.29"
+postgre_gogs_storage_class: "" 
 ...

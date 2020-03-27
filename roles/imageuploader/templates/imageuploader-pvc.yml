@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ imageuploader_app_name }}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+{% if imageuploader_storage_class != "" %}
+  storageClassName: "{{ imageuploader_storage_class }}"
+{% endif %}
+  resources:
+    requests:
+      storage: 2Gi 
+...
