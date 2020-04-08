@@ -76,6 +76,8 @@ spec:
         resources:
           limits:
             memory: 512Mi
+      imagePullSecrets:
+        - name: tale-liv-pull-secret
   triggers:
   - imageChangeParams:
       automatic: true

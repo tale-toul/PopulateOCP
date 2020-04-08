@@ -8,9 +8,11 @@ metadata:
   name: "{{ cakephp_app_name }}"
 spec:
   output:
+    pushSecret:
+      name: tale-liv-pull-secret
     to:
-      kind: ImageStreamTag
-      name: "{{ cakephp_app_name }}:latest"
+      kind: DockerImage
+      name: quayecosystem-quay-quay-enterprise.apps.sybil.tale.rhcee.support/tale/cakephp:latest
   postCommit:
     script: ./vendor/bin/phpunit
   source:

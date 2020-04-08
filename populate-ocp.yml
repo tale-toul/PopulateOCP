@@ -9,7 +9,7 @@
     todo_state: "present"
     articles_state: "present"
     remove_all_apps: false
-    api_entrypoint: "https://api.cluster-ocs-1692.ocs-1692.example.opentlc.com:6443"
+    api_entrypoint: "https://api.sybil.tale.rhcee.support:6443"
     api_ca_cert: "ingress-ca.crt"
   module_defaults:
     group/k8s:
