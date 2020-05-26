@@ -16,7 +16,9 @@ The projects created by the playbook are:  cakephp; imageuploader; rocket; todoa
 
 ## Deploy applications
 
-This playbook does not require an inventory file since all taks are run on localhost, the ansible _k8s_ modules use the parameter **host** to specify the OpenShift cluster API entry point, this API URL can be obtained running the following command from an already logged in session with the OCP cluster:
+This playbook does not require an inventory file since all taks are run on localhost, when the playbook runs it shows a warning message about the missing host file, this message can be safely ignored.
+
+The ansible _k8s_ modules use the parameter **host** to specify the OpenShift cluster API entry point, this API URL can be obtained running the following command from an already logged in session with the OCP cluster:
 
 ```
 $ oc whoami --show-server
