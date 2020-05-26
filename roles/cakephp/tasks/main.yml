@@ -73,6 +73,20 @@
               targetPort: 8080
             selector:
               name: "{{ cakephp_app_name }}" 
+    - name: Create quay pull secret
+      k8s:
+        api_key: "{{ _auth_result.k8s_auth.api_key }}"
+        api_version: v1
+        state: "{{ cakephp_state }}"
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: tale-liv-pull-secret
+          data:
+            .dockerconfigjson: ewogICJhdXRocyI6IHsKICAgICJxdWF5ZWNvc3lzdGVtLXF1YXktcXVheS1lbnRlcnByaXNlLmFwcHMuc3liaWwudGFsZS5yaGNlZS5zdXBwb3J0IjogewogICAgICAiYXV0aCI6ICJkR0ZzWlN0c2FYWTZTVlZLU0ZWUlFWUkxRMW8xVmtwUFQxUlJTMDlPVGtWUU1FRTBSRmRTVTAwMk5rWlpTa3d5VVUxSk1WWmFNMDlJTlZrelJEWlROVU5YU1ZOS1MwSklVZz09IiwKICAgICAgImVtYWlsIjogIiIKICAgIH0KICB9Cn0=
+          type: kubernetes.io/dockerconfigjson      
     - name: Create cakephp Image stream 
       k8s:
         api_key: "{{ _auth_result.k8s_auth.api_key }}"
@@ -86,6 +100,16 @@
             annotations:
               description: Keeps track of changes in the application image
             name: "{{ cakephp_app_name }}"
+          spec:
+            lookupPolicy:
+              local: false
+            tags:
+            - from:
+                kind: DockerImage
+                name: quayecosystem-quay-quay-enterprise.apps.sybil.tale.rhcee.support/tale/cakephp:latest
+              name: latest
+              referencePolicy:
+                type: Source
     - name: Create cakephp Buildconfig
       k8s:
         api_key: "{{ _auth_result.k8s_auth.api_key }}"
