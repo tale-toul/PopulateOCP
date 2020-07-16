@@ -17,7 +17,7 @@ cakephp_app_name: cakephp-mysql-example
 secret_name: cakesecret
 database_service_name: mysql
 source_repository_url: https://github.com/sclorg/cakephp-ex.git
-php_version: "7.1"
+php_version: "latest"
 database_engine: mysql
 opcache_revalidate_freq: 2
 ...
